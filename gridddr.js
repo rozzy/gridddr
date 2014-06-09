@@ -1,7 +1,8 @@
+;
 (function($) {
 
   $.gridddr = function(options) {
-    $('body').gridddr(options, true);
+    return $('body').gridddr(options, true);
   };
 
   $.fn.gridddr = function(options, global) {
@@ -15,9 +16,16 @@
       useGPU: true,
       useCSS: true
     };
+
     var settings = $.extend(default_settings, options),
       global = global || false;
-    return this;
+    return $.fn.gridddr.s;
+  };
+
+  $.fn.gridddr.s = {
+    getSettings: function() {
+      return {};
+    }
   };
 
 }(jQuery));
