@@ -1,6 +1,5 @@
 ;
 (function($) {
-
   $.gridddr = function(options) {
     return $('body').gridddr(options, true);
   };
@@ -16,15 +15,15 @@
       useGPU: true,
       useCSS: true
     };
-
     var settings = $.extend(default_settings, options),
       global = global || false;
-    return $.fn.gridddr.s;
+    return $.fn.gridddr.methods;
   };
 
-  $.fn.gridddr.s = {
-    getSettings: function() {
-      return {};
+  $.fn.gridddr.methods = {
+    getSettings: function(argument) {
+      if (argument) alert(argument);
+      return $.fn.gridddr();
     }
   };
 
