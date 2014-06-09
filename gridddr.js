@@ -17,9 +17,8 @@
     };
     var settings = $.extend(default_settings, options),
       global = global || false;
-
     return this;
 
   };
 
-}(jQuery))
+}(jQuery));
