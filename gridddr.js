@@ -1,12 +1,15 @@
 (function($) {
 
-  $.fn.gridddr = function(options) {
-    var default_settings = {};
-    var settings = $.extend(default_settings, options);
+  $.gridddr = function(options) {
+    $('body').gridddr(options, true);
+  };
 
-    return this.each(function() {
-      console.log('hello, ', this);
-    });
-  }
+  $.fn.gridddr = function(options, global) {
+    var default_settings = {};
+    var settings = $.extend(default_settings, options),
+      global = global || false;
+    console.log('hey', global, $(this));
+    return this;
+  };
 
 }(jQuery));
