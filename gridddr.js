@@ -16,14 +16,12 @@
       useCSS: true
     };
 
-    this.getSettings = function(test) {
-      alert("inseide:" + test);
-      return this;
+    this.getSettings = function() {
+      return settings;
     };
 
     var settings = $.extend(default_settings, options),
       global = global || false;
-    console.log("global: ", global);
     return this;
   };
 
