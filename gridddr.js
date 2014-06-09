@@ -7,7 +7,6 @@
     return this.each(function() {
       console.log('hello, ', this);
     });
-
   }
 
 }(jQuery));
