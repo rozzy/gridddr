@@ -3,3 +3,4 @@ index.slim
 style.sass
 script.js
 .sass-cache
+commit_settings.rb
