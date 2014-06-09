@@ -8,11 +8,10 @@ class Numeric
     s.sub(/\.?0*$/, units[e])
   end
 
-  def percent_of(n)
-    (100 - self.to_f / n.to_f * 100.0).ceil
+  def percent_of number
+    (100 - self.to_f / number.to_f * 100.0).ceil
   end
 end
-
 
 Dir.glob('./*[^min].js') do |e|
   new_name = File.basename(e, ".*").concat(".min.js")
