@@ -15,16 +15,16 @@
       useGPU: true,
       useCSS: true
     };
+
+    this.getSettings = function(test) {
+      alert("inseide:" + test);
+      return this;
+    };
+
     var settings = $.extend(default_settings, options),
       global = global || false;
-    return $.fn.gridddr.methods;
-  };
-
-  $.fn.gridddr.methods = {
-    getSettings: function(argument) {
-      if (argument) alert(argument);
-      return $.fn.gridddr();
-    }
+    console.log("global: ", global);
+    return this;
   };
 
 }(jQuery));
