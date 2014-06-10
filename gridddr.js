@@ -5,11 +5,10 @@
   };
 
   $.fn.gridddr = function(options, global) {
-    var default_settings = {
-      debug: true,
+    var defaultSettings = {
+      debug: false,
       container: ".gridddr-container",
       itemClass: ".gridddr-item",
-      itemTag: false,
       itemWidth: 150,
       itemHeight: 150,
       overlay: "black",
@@ -18,16 +17,40 @@
       repeat: true,
       useGPU: true,
       useCSS: true,
+      animations: true,
+      animationsSpeed: 500
     };
 
     var
-      settings = $.extend(default_settings, options),
+      settings = $.extend(defaultSettings, options),
       global = global || false,
-      _ = {
+      private = {
+        wrapChildren: function($this) {
+          var children = $this.find(settings.itemClass);
+          if (children.size() > 0) {
+
+          };
+          return true;
+        },
         inititalize: function(index, el) {
-          console.log(el);
+          var $this = $(el);
+
+          if (!$this.hasClass(settings.container)) {
+            $this.addClass(settings.container);
+          };
+
+          private.wrapChildren($this);
+          if (!$this.data('inititalized')) {
+            $this.data('inititalized', true);
+          };
+          if (settings.debug) {
+            console.log(el, "inititalized as Gridddr.");
+          };
+
+          return true;
         }
       },
+
       public = {
         getSettings: function() {
           return settings;
@@ -35,8 +58,7 @@
       };
 
     $.extend(this, public);
-    $.each(this, _.inititalize);
-
+    $.each(this, private.inititalize);
     return this;
   };
 
