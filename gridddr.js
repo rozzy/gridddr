@@ -8,20 +8,35 @@
     var default_settings = {
       debug: true,
       container: ".gridddr-container",
-      item: ".gridddr-item",
+      itemClass: ".gridddr-item",
+      itemTag: false,
+      itemWidth: 150,
+      itemHeight: 150,
+      overlay: "black",
       gridX: "auto",
       gridY: "auto",
       repeat: true,
       useGPU: true,
-      useCSS: true
+      useCSS: true,
     };
 
-    this.getSettings = function() {
-      return settings;
-    };
+    var
+      settings = $.extend(default_settings, options),
+      global = global || false,
+      _ = {
+        inititalize: function(index, el) {
+          console.log(el);
+        }
+      },
+      public = {
+        getSettings: function() {
+          return settings;
+        }
+      };
 
-    var settings = $.extend(default_settings, options),
-      global = global || false;
+    $.extend(this, public);
+    $.each(this, _.inititalize);
+
     return this;
   };
 

@@ -9,7 +9,7 @@ class Numeric
   end
 
   def percent_of number
-    (100 - self.to_f / number.to_f * 100.0).ceil
+    (100 - self.to_f / number * 100).ceil
   end
 end
 
