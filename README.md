@@ -1,4 +1,4 @@
 gridddr
 =======
 
-Awesome Flipping Grid jQuery Plugin
+Docs will be published soon
