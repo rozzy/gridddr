@@ -29,3 +29,8 @@
   .gridddr-item
     overflow: hidden
     display: inline-block
+    vertical-align: top
+    +transition(opacity 2s ease-in-out)
+
+    &.gridddr-invisible
+      opacity: 0

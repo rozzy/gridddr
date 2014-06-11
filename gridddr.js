@@ -27,11 +27,13 @@
       defaultClasses: { // default Gridddr classes; you can restyle it via css or rename classes to avoid conflicts
         container: ".gridddr-container",
         item: ".gridddr-item",
-        overlay: ".gridddr-overlay"
+        overlay: ".gridddr-overlay",
+        invisible: ".gridddr-invisible"
       },
       saveNode: false, // {Boolean}: true — won't modify original node, false — will wrap into Gridddr container
       itemWidth: 150, // false / {Integer}: false will be used as auto
       itemHeight: 150, // false / {Integer}: false will be used as auto
+      preloading: true, // {Boolean}: enable preloading, if itemTag == img
       overlay: true, // {Boolean} / {String}: true/false — enable/disable, {String} — hex, rgb, color
       overlayOpacity: true, // {Boolean} / {Float}: true — default, false — invisible, {Float} — your option
       gridX: false, // false / {Integer}: items in row; False will be used as auto
@@ -39,7 +41,8 @@
       repeat: true, // {Boolean}; randomly repeat items to fit in window
       useGPU: true, // {Boolean}; use GPU accleration for CSS?
       animations: true, // {Boolean}; use animation?
-      animationsSpeed: 500 // {Boolean}; speed of animations, if settings.animations is enabled
+      animationType: "flip", // {String}: [flip, fade, slide], if animations enabled
+      animationsSpeed: 1000 // {Boolean}; speed of animations, if settings.animations is enabled
     };
 
     var settings = $.extend(defaultSettings, options), // Merging default settings with user settings (if defined)
@@ -51,7 +54,9 @@
          *  @return {Object}
          **/
         findGridddrItems: function($this) {
-          var selector = settings.itemTag && settings.itemClass ? settings.itemTag + settings.itemClass : false ||
+          var selector = settings.itemTag && settings.itemClass ?
+            settings.itemTag + settings.itemClass :
+            false ||
             settings.itemTag ||
             settings.itemClass ||
             "*";
@@ -60,14 +65,22 @@
           return $this.find(">" + selector);
         },
 
+        generateWrapper: function($this) {
+          return $this.wrap($("<div/>", {
+            class: settings.defaultClasses.item.slice(1)
+          })).parent();
+        },
+
         wrapItems: function($this) {
           var $items = private.findGridddrItems($this);
 
           if ($items.size() > 0) {
             $items.each(function() {
-              var $item = !!settings.saveNode ? $(this) : $(this).wrap($("<div/>", {
-                class: settings.defaultClasses.item.slice(1)
-              })).parent();
+              var $item = !!settings.saveNode ? $(this) : private.generateWrapper($(this));
+
+              if (!!settings.preloading) {
+                $item.addClass(settings.defaultClasses.invisible.slice(1));
+              };
 
               if (!!settings.defaultClasses.item && !$item.hasClass(settings.defaultClasses.item.slice(1))) {
                 $item.addClass(settings.defaultClasses.item.slice(1));
@@ -104,18 +117,18 @@
 
         overlay: function($this) {
           if (settings.overlay != false) {
-            var el = $($this.find(settings.defaultClasses.overlay).get(0) || $this.prepend($('<div/>', {
+            var $el = $($this.find(settings.defaultClasses.overlay).get(0) || $this.prepend($('<div/>', {
               class: settings.defaultClasses.overlay.slice(1)
             })).find(settings.defaultClasses.overlay).get(0));
 
             if (settings.overlay.toString() != "true") {
-              private.css(el, 'background-color', settings.overlay.toString());
+              private.css($el, 'background-color', settings.overlay.toString());
             };
 
             if (typeof settings.overlayOpacity == "number") {
-              private.css(el, 'opacity', Number(settings.overlayOpacity));
+              private.css($el, 'opacity', Number(settings.overlayOpacity));
             } else if (typeof settings.overlayOpacity == "boolean") {
-              private.css(el, 'opacity', Math.min(0.9, Number(settings.overlayOpacity)));
+              private.css($el, 'opacity', Math.min(0.9, Number(settings.overlayOpacity)));
             };
           };
 
@@ -143,8 +156,21 @@
           return true;
         },
 
-        preloadContent: function() {
-          // $item.find('img');
+        preloadContent: function($this) {
+          if (!!settings.preloading) {
+            var $images = $this.find(settings.defaultClasses.item + ">[data-src]");
+            if ($images.size() > 0) {
+              $images.each(function() {
+                var $image = $(this);
+                var src = $image.data('src');
+
+                $('<img>').attr('src', src).one("load", function() {
+                  $image.attr('src', src).removeData('src');
+                  $image.parent().removeClass(settings.defaultClasses.invisible.slice(1));
+                });
+              });
+            };
+          };
         },
 
         debug: function() {
@@ -162,7 +188,6 @@
          **/
         inititalize: function(index, el) {
           var $this = $(el);
-          private.preloadContent($this);
 
           if (!$this.hasClass(settings.defaultClasses.container.slice(1))) {
             $this.addClass(settings.defaultClasses.container.slice(1));
@@ -173,6 +198,7 @@
           };
 
           if (private.overlay($this) && private.wrapItems($this) && !$this.data('inititalized')) {
+            private.preloadContent($this);
             $this.data('inititalized', true);
             private.debug(el, "inititalized as Gridddr.");
             return true;
