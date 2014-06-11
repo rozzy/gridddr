@@ -30,6 +30,7 @@
         overlay: ".gridddr-overlay",
         invisible: ".gridddr-invisible",
         fitImage: ".fit-image",
+        imgPlaceholder: ".loaded-image",
         flipper: {
           flipFront: ".gridddr-flipper-front",
           flipBack: ".gridddr-flipper-back",
@@ -45,9 +46,9 @@
       preloading: true, // {Boolean}: enable preloading, if itemTag == img
       useQueue: true, // {Boolean}: use Queue to show images after preloading?
       shuffleQueue: true, // {Boolean}: randmozie Queue
-      queueDelay: 10, // {Number}: delay between queue appearance
+      queueDelay: 50, // {Number}: delay between queue appearance
       overlay: true, // {Boolean} / {String}: true/false — enable/disable, {String} — hex, rgb, color
-      overlayOpacity: true, // {Boolean} / {Float}: true — default, false — invisible, {Float} — your option
+      overlayOpacity: 0.6, // {Boolean} / {Float}: true — default, false — invisible, {Float} — your option
       gridX: false, // false / {Integer}: items in row; False will be used as auto
       gridY: false, // false / {Integer}: number of rows; False will be used as auto
       repeat: true, // {Boolean}: randomly repeat items to fit in window
@@ -77,6 +78,11 @@
           return $this.find(">" + selector);
         },
 
+        /**
+         *  Generates wrapper for Gridddr item
+         *  @param {Object} $this
+         *  @return {Object}
+         **/
         generateWrapper: function($this) {
           var result;
           switch (settings.animationType) {
@@ -153,7 +159,12 @@
           return true;
         },
 
-
+        /**
+         *  Creates a grid
+         *  @param {Object} $container
+         *  @param {Object} $items
+         *  @return {Boolean}
+         **/
         createGrid: function($container, $items) {
           // private.debug($container, "width: ", $container.width());
           return true;
@@ -177,7 +188,7 @@
             if (typeof settings.overlayOpacity == "number") {
               private.css($el, 'opacity', Number(settings.overlayOpacity));
             } else if (typeof settings.overlayOpacity == "boolean") {
-              private.css($el, 'opacity', Math.min(0.9, Number(settings.overlayOpacity)));
+              private.css($el, 'opacity', Math.min(0.8, Number(settings.overlayOpacity)));
             };
           };
 
@@ -213,14 +224,19 @@
           return true;
         },
 
+        /**
+         *  Prepares images for preloading
+         *  @param {Object} $item
+         *  @return {Boolean}
+         **/
         prepareForPreloading: function($item) {
           if (settings.animationType == "fade") {
             $item.addClass(settings.defaultClasses.invisible.slice(1));
           };
-
           if (settings.animationType == "flip") {
             $item.addClass(settings.defaultClasses.flipper.opened);
           };
+          return true;
         },
 
         /**
@@ -240,7 +256,7 @@
                   var src = $image.data('src');
 
                   $('<img>').attr('src', src).one("load", function() {
-                    $image.attr('src', src).removeData('src');
+                    $image.attr('src', src).addClass(settings.defaultClasses.imgPlaceholder.slice(1)).removeData('src');
                     if (!!settings.useQueue) {
                       $queue.push($image);
 
@@ -250,6 +266,8 @@
                     } else {
                       private.loadedCallback.apply($image);
                     };
+                  }).on("error", function(e) {
+                    private.debug("Error while loading image: ", e, $(e.delegateTarget));
                   });
                 });
               } catch (error) {
@@ -260,16 +278,24 @@
           return true;
         },
 
+        /**
+         *  Executes after image was loaded
+         *  @return {Object}
+         **/
         loadedCallback: function() {
           switch (settings.animationType) {
             case "flip":
-              return $(this).parents().eq(2).removeClass(settings.defaultClasses.flipper.opened);
+              return $(this).removeClass(settings.defaultClasses.imgPlaceholder.slice(1)).parents().eq(2).removeClass(settings.defaultClasses.flipper.opened);
               break;
             default:
-              return $(this).parent().removeClass(settings.defaultClasses.invisible.slice(1));
+              return $(this).removeClass(settings.defaultClasses.imgPlaceholder.slice(1)).parent().removeClass(settings.defaultClasses.invisible.slice(1));
           };
         },
 
+        /**
+         *  Creates queue of loaded images
+         *  @return {Object}
+         **/
         createQueue: function() {
           this.queue = [];
           this.queuePromise = $.Deferred();
@@ -283,9 +309,14 @@
               $images.each(private.loadedCallback);
             };
           });
-          return true;
+          return this.queue;
         },
 
+        /**
+         *  Shuffles queue
+         *  @param {Object} array
+         *  @return {Object}
+         **/
         shuffleQueue: function(array) {
           var size = array.length,
             backup, current_index;
@@ -300,6 +331,11 @@
           return array;
         },
 
+        /**
+         *  Run over queue and show each item with delay
+         *  @param {Object} $this
+         *  @return {Object}
+         **/
         execQueue: function($queue) {
           var $queue = $queue || private.queue;
           if (settings.shuffleQueue) {
@@ -325,7 +361,6 @@
           };
           return false;
         },
-
 
         /**
          *  Initialize Gridddr

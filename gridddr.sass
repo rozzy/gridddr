@@ -25,12 +25,14 @@
     top: 0
     left: 0
     opacity: 0.5
+    z-index: 999
 
   .gridddr-item
     overflow: hidden
     display: inline-block
     vertical-align: top
     +transition(opacity 2s ease-in-out)
+
     &.gridddr-invisible
       opacity: 0
 
@@ -41,6 +43,12 @@
 
       .gridddr-flipper-front
         max-width: 100%
+
+    .loaded-image
+      opacity: 0
+
+    img
+      +transition(opacity 1s ease-in-out)
 
   .gridddr-flip-container
     perspective: 1000
