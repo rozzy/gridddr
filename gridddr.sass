@@ -31,6 +31,38 @@
     display: inline-block
     vertical-align: top
     +transition(opacity 2s ease-in-out)
-
     &.gridddr-invisible
       opacity: 0
+
+    &.fit-image
+      img
+        max-width: 100% !important
+        max-height: 100% !important
+
+      .gridddr-flipper-front
+        max-width: 100%
+
+  .gridddr-flip-container
+    perspective: 1000
+    &:hover .gridddr-flipper, &.opened .gridddr-flipper
+      +transform(rotateY(180deg))
+      z-index: 10
+
+    .gridddr-flipper
+      +transition(all 1s ease-in-out)
+      +transform-style(preserve-3d)
+      position: relative
+      width: 100%
+
+    .gridddr-flipper-back, .gridddr-flipper-front
+      +backface-visibility(hidden)
+      position: absolute
+      top: 0
+      left: 0
+
+    .gridddr-flipper-front
+      z-index: 2
+
+    .gridddr-flipper-back
+      +transform(rotateY(180deg))
+

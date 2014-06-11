@@ -28,21 +28,33 @@
         container: ".gridddr-container",
         item: ".gridddr-item",
         overlay: ".gridddr-overlay",
-        invisible: ".gridddr-invisible"
+        invisible: ".gridddr-invisible",
+        fitImage: ".fit-image",
+        flipper: {
+          flipFront: ".gridddr-flipper-front",
+          flipBack: ".gridddr-flipper-back",
+          flipWrapper: ".gridddr-flipper",
+          flipContainer: ".gridddr-flip-container",
+          opened: "opened"
+        },
       },
+      fitImage: false, // {Boolean}: fit image into container
       saveNode: false, // {Boolean}: true — won't modify original node, false — will wrap into Gridddr container
       itemWidth: 150, // false / {Integer}: false will be used as auto
       itemHeight: 150, // false / {Integer}: false will be used as auto
       preloading: true, // {Boolean}: enable preloading, if itemTag == img
+      useQueue: true, // {Boolean}: use Queue to show images after preloading?
+      shuffleQueue: true, // {Boolean}: randmozie Queue
+      queueDelay: 10, // {Number}: delay between queue appearance
       overlay: true, // {Boolean} / {String}: true/false — enable/disable, {String} — hex, rgb, color
       overlayOpacity: true, // {Boolean} / {Float}: true — default, false — invisible, {Float} — your option
       gridX: false, // false / {Integer}: items in row; False will be used as auto
       gridY: false, // false / {Integer}: number of rows; False will be used as auto
-      repeat: true, // {Boolean}; randomly repeat items to fit in window
-      useGPU: true, // {Boolean}; use GPU accleration for CSS?
-      animations: true, // {Boolean}; use animation?
+      repeat: true, // {Boolean}: randomly repeat items to fit in window
+      useGPU: true, // {Boolean}: use GPU accleration for CSS?
+      animations: true, // {Boolean}: use animation?
       animationType: "flip", // {String}: [flip, fade, slide], if animations enabled
-      animationsSpeed: 1000 // {Boolean}; speed of animations, if settings.animations is enabled
+      animationsSpeed: 1000 // {Boolean}: speed of animations, if settings.animations is enabled
     };
 
     var settings = $.extend(defaultSettings, options), // Merging default settings with user settings (if defined)
@@ -66,9 +78,25 @@
         },
 
         generateWrapper: function($this) {
-          return $this.wrap($("<div/>", {
-            class: settings.defaultClasses.item.slice(1)
-          })).parent();
+          var result;
+          switch (settings.animationType) {
+            case 'flip':
+              result = $this.wrap($("<div/>", {
+                class: settings.defaultClasses.flipper.flipFront.slice(1)
+              })).parent().wrap($("<div/>", {
+                class: settings.defaultClasses.flipper.flipWrapper.slice(1)
+              })).parent().append($("<div/>", {
+                class: settings.defaultClasses.flipper.flipBack.slice(1)
+              })).wrap($("<div/>", {
+                class: settings.defaultClasses.flipper.flipContainer.slice(1)
+              })).parent();
+              break;
+            default:
+              result = $this.wrap($("<div/>", {
+                class: settings.defaultClasses.item.slice(1)
+              })).parent();
+          };
+          return result;
         },
 
         /**
@@ -84,7 +112,11 @@
               var $item = !!settings.saveNode ? $(this) : private.generateWrapper($(this));
 
               if (!!settings.preloading) {
-                $item.addClass(settings.defaultClasses.invisible.slice(1));
+                private.prepareForPreloading($item);
+              };
+
+              if (!!settings.fitImage) {
+                $item.addClass(settings.defaultClasses.fitImage.slice(1));
               };
 
               if (!!settings.defaultClasses.item && !$item.hasClass(settings.defaultClasses.item.slice(1))) {
@@ -181,27 +213,104 @@
           return true;
         },
 
+        prepareForPreloading: function($item) {
+          if (settings.animationType == "fade") {
+            $item.addClass(settings.defaultClasses.invisible.slice(1));
+          };
+
+          if (settings.animationType == "flip") {
+            $item.addClass(settings.defaultClasses.flipper.opened);
+          };
+        },
+
         /**
          *  Function to preload images, if settings.preloading is true
          *  @param {Object} $this
          *  @return {Boolean}
          **/
-        preloadContent: function($this) {
+        preloadContent: function(el) {
           if (!!settings.preloading) {
-            var $images = $this.find(settings.defaultClasses.item + ">[data-src]");
-            if ($images.size() > 0) {
-              $images.each(function() {
-                var $image = $(this);
-                var src = $image.data('src');
+            var $images = $(el).find(settings.defaultClasses.item).find("[data-src]"),
+              $queue = this.queue,
+              goal = $images.size();
+            if (goal > 0) {
+              try {
+                $images.each(function() {
+                  var $image = $(this);
+                  var src = $image.data('src');
 
-                $('<img>').attr('src', src).one("load", function() {
-                  $image.attr('src', src).removeData('src');
-                  $image.parent().removeClass(settings.defaultClasses.invisible.slice(1));
+                  $('<img>').attr('src', src).one("load", function() {
+                    $image.attr('src', src).removeData('src');
+                    if (!!settings.useQueue) {
+                      $queue.push($image);
+
+                      if ($queue.length == goal - 1) {
+                        private.queuePromise.resolve();
+                      };
+                    } else {
+                      private.loadedCallback.apply($image);
+                    };
+                  });
                 });
-              });
+              } catch (error) {
+                private.queuePromise.reject(error);
+              };
             };
           };
           return true;
+        },
+
+        loadedCallback: function() {
+          switch (settings.animationType) {
+            case "flip":
+              return $(this).parents().eq(2).removeClass(settings.defaultClasses.flipper.opened);
+              break;
+            default:
+              return $(this).parent().removeClass(settings.defaultClasses.invisible.slice(1));
+          };
+        },
+
+        createQueue: function() {
+          this.queue = [];
+          this.queuePromise = $.Deferred();
+          this.queuePromise.done(this.execQueue);
+          this.queuePromise.fail(function(error) {
+            private.debug("Preloading images failed: ", error);
+            if (this.queue.length > 0) {
+              this.execQueue(this.queue);
+            };
+            if ($images = $(settings.defaultClasses.container).find(settings.defaultClasses.item).find("[data-src]") && $images.size() > 0) {
+              $images.each(private.loadedCallback);
+            };
+          });
+          return true;
+        },
+
+        shuffleQueue: function(array) {
+          var size = array.length,
+            backup, current_index;
+
+          while (size) {
+            current_index = Math.floor(Math.random() * size--);
+            backup = array[size];
+            array[size] = array[current_index];
+            array[current_index] = backup;
+          }
+
+          return array;
+        },
+
+        execQueue: function($queue) {
+          var $queue = $queue || private.queue;
+          if (settings.shuffleQueue) {
+            $queue = private.shuffleQueue($queue);
+          };
+          $.each($queue, function(i) {
+            var $this = $(this);
+            setTimeout(function() {
+              private.loadedCallback.apply($this);
+            }, i * Number(settings.queueDelay));
+          });
         },
 
         /**
@@ -216,6 +325,7 @@
           };
           return false;
         },
+
 
         /**
          *  Initialize Gridddr
@@ -235,7 +345,12 @@
           };
 
           if (private.overlay($this) && private.wrapItems($this) && !$this.data('inititalized')) {
-            private.preloadContent($this);
+            if (!!settings.useQueue) {
+              private.createQueue.apply(private);
+            };
+
+            private.preloadContent.apply(private, $this);
+
             $this.data('inititalized', true);
             private.debug(el, "inititalized as Gridddr.");
             return true;
