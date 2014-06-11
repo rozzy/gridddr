@@ -49,7 +49,7 @@
       auto = auto || false, // Use auto node creation?
       private = { // Private Gridddr functions
         /**
-         *  Convert children objects into Gridddr items
+         *  Search items in container, which match itemClass/itemTag
          *  @param {Object} $this
          *  @return {Object}
          **/
@@ -71,6 +71,11 @@
           })).parent();
         },
 
+        /**
+         *  Convert children objects into Gridddr items
+         *  @param {Object} $this
+         *  @return {Object}
+         **/
         wrapItems: function($this) {
           var $items = private.findGridddrItems($this);
 
@@ -98,6 +103,12 @@
           return private.createGrid($this, $items);
         },
 
+        /**
+         *  Make Gridddr to work in inline mode
+         *  @param {Object} $this
+         *  @param {Boolean} set
+         *  @return {Boolean}
+         **/
         setRelativeClass: function($this, set) {
           var set = set || settings.relative || false;
 
@@ -110,11 +121,17 @@
           return true;
         },
 
+
         createGrid: function($container, $items) {
           // private.debug($container, "width: ", $container.width());
           return true;
         },
 
+        /**
+         *  Creates overlay, if settings.overlay is true
+         *  @param {Object} $this
+         *  @return {Boolean}
+         **/
         overlay: function($this) {
           if (settings.overlay != false) {
             var $el = $($this.find(settings.defaultClasses.overlay).get(0) || $this.prepend($('<div/>', {
@@ -135,6 +152,14 @@
           return true;
         },
 
+        /**
+         *  Wrapper for $.css and $.animate to communicate with settings.animations
+         *  @param {Object} el
+         *  @param {Mixed} property {String} or {Object}
+         *  @param {Mixed} value {String} or {Object}
+         *  @param {Mixed} callback {Function} or {String} (name of global function; like window["alert"])
+         *  @return {Object}
+         **/
         css: function(el, property, value, callback) {
           if (settings.animations) {
             if (typeof property != "object") {
@@ -156,6 +181,11 @@
           return true;
         },
 
+        /**
+         *  Function to preload images, if settings.preloading is true
+         *  @param {Object} $this
+         *  @return {Boolean}
+         **/
         preloadContent: function($this) {
           if (!!settings.preloading) {
             var $images = $this.find(settings.defaultClasses.item + ">[data-src]");
@@ -171,8 +201,14 @@
               });
             };
           };
+          return true;
         },
 
+        /**
+         *  Wrapper over console.log to communicate with debug mode (settings.debug)
+         *  @multiple {Mixed} params
+         *  @return {Boolean}
+         **/
         debug: function() {
           if (settings.debug && console) {
             console.log.apply(console, arguments);
@@ -180,6 +216,7 @@
           };
           return false;
         },
+
         /**
          *  Initialize Gridddr
          *  @param {Integer} index
@@ -218,15 +255,21 @@
           return settings;
         },
 
+        /**
+         *  Changes overlay opacity
+         *  @param {Number} opacity
+         *  @return {Object}
+         **/
         setOverlayOpacity: function(opacity) {
           var opacity = opacity || !!opacity;
           settings.overlayOpacity = opacity;
           private.overlay($(settings.container));
+          return this;
         }
       };
 
     $.extend(this, public); // Merge settings
-    $.each(this, private.inititalize);
+    $.each(this, private.inititalize); // Initializing objects
     return this;
   };
 
