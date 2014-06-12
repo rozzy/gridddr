@@ -28,10 +28,12 @@
         container: ".gridddr-container",
         item: ".gridddr-item",
         overlay: ".gridddr-overlay",
+        nowrap: ".gridddr-nowrap-container",
         invisible: ".gridddr-invisible",
         separator: ".gridddr-separator",
         fitImage: ".fit-image",
         imgPlaceholder: ".loaded-image",
+        slideUp: ".gridddr-slideup",
         flipper: {
           flipFront: ".gridddr-flipper-front",
           flipBack: ".gridddr-flipper-back",
@@ -161,20 +163,32 @@
         },
 
         /**
+         *  Greps nth-item from array
+         *  @param {Object} $items
+         *  @param {Number} eq
+         *  @return {Object}
+         **/
+        grepItemsByEq: function($items, eq) {
+          return $.grep($items, function(element, index) {
+            return (index + 1) % Number(eq) == 0;
+          });
+        },
+
+        /**
          *  Creates a grid
          *  @param {Object} $container
          *  @param {Object} $items
          *  @return {Boolean}
          **/
         createGrid: function($container, $items) {
+          $container.addClass(settings.defaultClasses.nowrap.slice(1));
           if (!!settings.gridX && typeof settings.gridX === "number" && Number(settings.gridX) > 0) {
-            var $items = $.grep($items, function(element, index) {
-              return (index + 1) % Number(settings.gridX) == 0;
-            });
+            var $items = private.grepItemsByEq($items, settings.gridX);
             $.each($items, private.insertSeparator);
           } else {
             if (typeof settings.itemWidth === "number") {
-
+              var itemsInRow = Math.ceil($container.width() / settings.itemWidth) || 10;
+              $.each(private.grepItemsByEq($items, itemsInRow), private.insertSeparator);
             } else {
 
             };
@@ -193,7 +207,13 @@
           var $this = $(el);
 
           if (!settings.saveNode) {
-            $this = $this.parent();
+            switch (settings.animationType) {
+              case "flip":
+                $this = $this.parents().eq(2);
+                break;
+              default:
+                $this = $this.parent();
+            }
           };
 
           $("<div/>", {
@@ -266,11 +286,15 @@
           if (!!settings.saveNode && settings.animationType.toLowerCase() == "flip") {
             settings.animationType = "fade";
           };
-          if (settings.animationType.toLowerCase() == "fade") {
-            $item.addClass(settings.defaultClasses.invisible.slice(1));
-          };
-          if (settings.animationType.toLowerCase() == "flip") {
-            $item.addClass(settings.defaultClasses.flipper.opened);
+          switch (settings.animationType.toLowerCase()) {
+            case "flip":
+              $item.addClass(settings.defaultClasses.flipper.opened);
+              break;
+            default:
+              $item.addClass(settings.defaultClasses.invisible.slice(1));
+              if (settings.animationType.toLowerCase() === "slide") {
+                $item.addClass(settings.defaultClasses.slideUp.slice(1));
+              };
           };
           return true;
         },
@@ -351,6 +375,9 @@
               var $this = $(this).removeClass(settings.defaultClasses.imgPlaceholder.slice(1));
               if (!settings.saveNode) {
                 $this = $this.parent();
+              };
+              if (settings.animationType.toLowerCase() === "slide") {
+                $this.removeClass(settings.defaultClasses.slideUp.slice(1));
               };
               return $this.removeClass(settings.defaultClasses.invisible.slice(1));
           };
@@ -434,6 +461,7 @@
          **/
         inititalize: function(index, el) {
           var $this = $(el);
+          $this.css('opacity', 0);
 
           if (!$this.hasClass(settings.defaultClasses.container.slice(1))) {
             $this.addClass(settings.defaultClasses.container.slice(1));
@@ -450,7 +478,7 @@
 
             private.preloadContent.apply(private, $this);
 
-            $this.data('inititalized', true);
+            $this.data('inititalized', true).css('opacity', 1);
             private.debug(el, "inititalized as Gridddr.");
             return true;
           }

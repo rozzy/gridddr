@@ -11,6 +11,9 @@
   text-align: left
   white-space: normal
 
+  &.gridddr-nowrap-container
+    white-space: nowrap
+
   &.relative
     position: relative
 
@@ -36,8 +39,15 @@
     vertical-align: top
     +transition(opacity 2s ease-in-out)
 
+    img
+      display: block
+      +transition(all 1s ease-out)
+
     &.gridddr-invisible
       opacity: 0
+
+      &.gridddr-slideup img
+        margin-top: 100px
 
     &.fit-image
       img
@@ -49,9 +59,6 @@
 
     .loaded-image
       opacity: 0
-
-    img
-      +transition(opacity 1s ease-in-out)
 
   .gridddr-flip-container
     perspective: 1000
