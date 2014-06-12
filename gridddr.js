@@ -29,6 +29,7 @@
         item: ".gridddr-item",
         overlay: ".gridddr-overlay",
         invisible: ".gridddr-invisible",
+        separator: ".gridddr-separator",
         fitImage: ".fit-image",
         imgPlaceholder: ".loaded-image",
         flipper: {
@@ -166,7 +167,35 @@
          *  @return {Boolean}
          **/
         createGrid: function($container, $items) {
-          // private.debug($container, "width: ", $container.width());
+          if (!!settings.gridX && typeof settings.gridX === "number" && Number(settings.gridX) > 0) {
+            var $items = $.grep($items, function(element, index) {
+              return (index + 1) % Number(settings.gridX) == 0;
+            });
+            $.each($items, private.insertSeparator);
+          } else {
+
+          };
+
+          return true;
+        },
+
+        /**
+         *  Insert separator by settings.gridX
+         *  @param {Number} i
+         *  @param {Object} el
+         *  @return {Boolean}
+         **/
+        insertSeparator: function(i, el) {
+          var $this = $(el);
+
+          if (!settings.saveNode) {
+            $this = $this.parent();
+          };
+
+          $("<div/>", {
+            class: settings.defaultClasses.separator.slice(1)
+          }).insertAfter($this);
+
           return true;
         },
 
@@ -185,9 +214,9 @@
               private.css($el, 'background-color', settings.overlay.toString());
             };
 
-            if (typeof settings.overlayOpacity == "number") {
+            if (typeof settings.overlayOpacity === "number") {
               private.css($el, 'opacity', Number(settings.overlayOpacity));
-            } else if (typeof settings.overlayOpacity == "boolean") {
+            } else if (typeof settings.overlayOpacity === "boolean") {
               private.css($el, 'opacity', Math.min(0.8, Number(settings.overlayOpacity)));
             };
           };
@@ -215,9 +244,9 @@
             el.animate(property, (settings.animationsSpeed || 0), (callback || false));
           } else {
             el.css(property, value || false);
-            if (typeof callback == "function") {
+            if (typeof callback === "function") {
               callback.call();
-            } else if (typeof window[callback] == "function") {
+            } else if (typeof window[callback] === "function") {
               window[callback]();
             } else private.debug(callback, "function dows not exist.");
           };
@@ -242,6 +271,14 @@
           return true;
         },
 
+        /**
+         *  Load image
+         *  @param {Object} $image
+         *  @param {Number} goal
+         *  @param {String} src
+         *  @param {Object} $queue
+         *  @return {Boolean}
+         **/
         loadImage: function($image, goal, src, $queue) {
           $image.attr('src', src).removeData('src');
           if (!!settings.preloading) {
