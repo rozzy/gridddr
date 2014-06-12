@@ -54,7 +54,7 @@
       repeat: true, // {Boolean}: randomly repeat items to fit in window
       useGPU: true, // {Boolean}: use GPU accleration for CSS?
       animations: true, // {Boolean}: use animation?
-      animationType: "flip", // {String}: [flip, fade, slide], if animations enabled
+      animationType: "fade", // {String}: [flip, fade, slide], if animations enabled
       animationsSpeed: 1000 // {Boolean}: speed of animations, if settings.animations is enabled
     };
 
@@ -85,7 +85,7 @@
          **/
         generateWrapper: function($this) {
           var result;
-          switch (settings.animationType) {
+          switch (settings.animationType.toLowerCase()) {
             case 'flip':
               result = $this.wrap($("<div/>", {
                 class: settings.defaultClasses.flipper.flipFront.slice(1)
@@ -230,13 +230,31 @@
          *  @return {Boolean}
          **/
         prepareForPreloading: function($item) {
-          if (settings.animationType == "fade") {
+          if (!!settings.saveNode && settings.animationType.toLowerCase() == "flip") {
+            settings.animationType = "fade";
+          };
+          if (settings.animationType.toLowerCase() == "fade") {
             $item.addClass(settings.defaultClasses.invisible.slice(1));
           };
-          if (settings.animationType == "flip") {
+          if (settings.animationType.toLowerCase() == "flip") {
             $item.addClass(settings.defaultClasses.flipper.opened);
           };
           return true;
+        },
+
+        loadImage: function($image, goal, src, $queue) {
+          $image.attr('src', src).removeData('src');
+          if (!!settings.preloading) {
+            $image.addClass(settings.defaultClasses.imgPlaceholder.slice(1))
+          };
+          if (!!settings.useQueue) {
+            $queue.push($image);
+            if ($queue.length == goal) {
+              private.queuePromise.resolve();
+            };
+          } else {
+            private.loadedCallback.apply($image);
+          };
         },
 
         /**
@@ -245,40 +263,33 @@
          *  @return {Boolean}
          **/
         preloadContent: function(el) {
-          if (!!settings.preloading) {
-            var $images = $(el).find(settings.defaultClasses.item),
-              $queue = this.queue,
-              goal = $images.size();
+          var $images = $(el).find(settings.defaultClasses.item),
+            $queue = this.queue,
+            goal = $images.size();
 
-            if (!settings.saveNode) {
-              $images = $images.find("[data-src]");
-            };
+          if (!settings.saveNode) {
+            $images = $images.find("[data-src]");
+          };
 
-            if (goal > 0) {
-              try {
-                $images.each(function() {
-                  var $image = $(this);
-                  var src = $image.data('src');
+          if (!!settings.preloading && goal > 0) {
+            try {
+              $images.each(function() {
+                var $image = $(this);
+                var src = $image.data('src');
 
-                  $('<img>').attr('src', src).one("load", function() {
-                    $image.attr('src', src).addClass(settings.defaultClasses.imgPlaceholder.slice(1)).removeData('src');
-                    if (!!settings.useQueue) {
-                      $queue.push($image);
-
-                      if ($queue.length == goal - 1) {
-                        private.queuePromise.resolve();
-                      };
-                    } else {
-                      private.loadedCallback.apply($image);
-                    };
-                  }).on("error", function(e) {
-                    private.debug("Error while loading image: ", e, $(e.delegateTarget));
-                  });
+                $('<img>').attr('src', src).one("load", function() {
+                  private.loadImage($image, goal, src, $queue);
+                }).on("error", function(e) {
+                  private.debug("Error while loading image: ", e, $(e.delegateTarget));
                 });
-              } catch (error) {
-                private.queuePromise.reject(error);
-              };
+              });
+            } catch (error) {
+              private.queuePromise.reject(error);
             };
+          } else {
+            $images.each(function() {
+              private.loadImage($(this), goal, $(this).data('src'), $queue);
+            });
           };
           return true;
         },
@@ -288,7 +299,10 @@
          *  @return {Object}
          **/
         loadedCallback: function() {
-          switch (settings.animationType) {
+          if (!settings.preloading) {
+            return;
+          };
+          switch (settings.animationType.toLowerCase()) {
             case "flip":
               return $(this).removeClass(settings.defaultClasses.imgPlaceholder.slice(1)).parents().eq(2).removeClass(settings.defaultClasses.flipper.opened);
               break;
