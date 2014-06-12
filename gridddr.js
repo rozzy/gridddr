@@ -42,7 +42,8 @@
           opened: "opened"
         },
       },
-      fitImage: false, // {Boolean}: fit image into container
+      fitContainer: false, // {Boolean}: fit items into Gridddr container
+      fitImage: false, // {Boolean}: fit image into item container
       saveNode: false, // {Boolean}: true — won't modify original node, false — will wrap into Gridddr container
       itemWidth: 150, // false / {Integer}: false will be used as auto
       itemHeight: 150, // false / {Integer}: false will be used as auto
@@ -187,7 +188,8 @@
             $.each($items, private.insertSeparator);
           } else {
             if (typeof settings.itemWidth === "number") {
-              var itemsInRow = Math.ceil($container.width() / settings.itemWidth) || 10;
+              var itemsInRow = $container.width() / settings.itemWidth || 10;
+              itemsInRow = !!settings.fitContainer ? Math.floor(itemsInRow) : Math.ceil(itemsInRow);
               $.each(private.grepItemsByEq($items, itemsInRow), private.insertSeparator);
             } else {
 
