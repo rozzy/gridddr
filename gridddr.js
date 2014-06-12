@@ -50,8 +50,8 @@
       queueDelay: 50, // {Number}: delay between queue appearance
       overlay: true, // {Boolean} / {String}: true/false — enable/disable, {String} — hex, rgb, color
       overlayOpacity: 0.6, // {Boolean} / {Float}: true — default, false — invisible, {Float} — your option
-      gridX: false, // false / {Integer}: items in row; False will be used as auto
-      gridY: false, // false / {Integer}: number of rows; False will be used as auto
+      gridX: false, // {Boolean} / {Integer}: items in row; {Boolean} will be used as auto
+      gridY: false, // {Boolean} / {Integer}: number of rows; {Boolean} will be used as auto
       repeat: true, // {Boolean}: randomly repeat items to fit in window
       useGPU: true, // {Boolean}: use GPU accleration for CSS?
       animations: true, // {Boolean}: use animation?
@@ -173,7 +173,11 @@
             });
             $.each($items, private.insertSeparator);
           } else {
+            if (typeof settings.itemWidth === "number") {
 
+            } else {
+
+            };
           };
 
           return true;
