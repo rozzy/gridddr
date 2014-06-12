@@ -283,6 +283,7 @@
          *  @return {Object}
          **/
         loadedCallback: function() {
+          console.log("hit")
           switch (settings.animationType) {
             case "flip":
               return $(this).removeClass(settings.defaultClasses.imgPlaceholder.slice(1)).parents().eq(2).removeClass(settings.defaultClasses.flipper.opened);
