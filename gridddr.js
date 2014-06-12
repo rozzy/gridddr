@@ -476,8 +476,8 @@
          **/
         setOverlayOpacity: function(opacity) {
           var opacity = opacity || !!opacity;
-          settings.overlayOpacity = opacity;
-          private.overlay($(settings.container));
+          settings.overlayOpacity = Number(opacity);
+          private.overlay($(settings.defaultClasses.container));
           return this;
         }
       };
