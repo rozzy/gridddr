@@ -246,9 +246,14 @@
          **/
         preloadContent: function(el) {
           if (!!settings.preloading) {
-            var $images = $(el).find(settings.defaultClasses.item).find("[data-src]"),
+            var $images = $(el).find(settings.defaultClasses.item),
               $queue = this.queue,
               goal = $images.size();
+
+            if (!settings.saveNode) {
+              $images = $images.find("[data-src]");
+            };
+
             if (goal > 0) {
               try {
                 $images.each(function() {
@@ -283,13 +288,16 @@
          *  @return {Object}
          **/
         loadedCallback: function() {
-          console.log("hit")
           switch (settings.animationType) {
             case "flip":
               return $(this).removeClass(settings.defaultClasses.imgPlaceholder.slice(1)).parents().eq(2).removeClass(settings.defaultClasses.flipper.opened);
               break;
             default:
-              return $(this).removeClass(settings.defaultClasses.imgPlaceholder.slice(1)).parent().removeClass(settings.defaultClasses.invisible.slice(1));
+              var $this = $(this).removeClass(settings.defaultClasses.imgPlaceholder.slice(1));
+              if (!settings.saveNode) {
+                $this = $this.parent();
+              };
+              return $this.removeClass(settings.defaultClasses.invisible.slice(1));
           };
         },
 
