@@ -19,48 +19,66 @@
    **/
   $.fn.gridddr = function(options, auto) {
     var defaultSettings = {
-      debug: false, // {Boolean}: true — enable console debug messages, false — disable
-      relative: false, // {Boolean}: true — Gridddr will be applied for inline object, false — fit window
-      container: null, // false / {String}: specify main Gridddr container selector
-      itemClass: false, // false / {String}: specify items by ClassName. Concats with itemTag, if set
-      itemTag: "img", // false / {String}: specify items by TagName. Concats with itemClass, if set
-      defaultClasses: { // default Gridddr classes; you can restyle it via css or rename classes to avoid conflicts
-        container: ".gridddr-container",
-        item: ".gridddr-item",
-        overlay: ".gridddr-overlay",
-        nowrap: ".gridddr-nowrap-container",
-        invisible: ".gridddr-invisible",
-        separator: ".gridddr-separator",
-        fitImage: ".fit-image",
-        imgPlaceholder: ".loaded-image",
-        slideUp: ".gridddr-slideup",
-        flipper: {
-          flipFront: ".gridddr-flipper-front",
-          flipBack: ".gridddr-flipper-back",
-          flipWrapper: ".gridddr-flipper",
-          flipContainer: ".gridddr-flip-container",
-          opened: "opened"
+        debug: false, // {Boolean}: true — enable console debug messages, false — disable
+        relative: false, // {Boolean}: true — Gridddr will be applied for inline object, false — fit window
+        container: null, // false / {String}: specify main Gridddr container selector
+        itemClass: false, // false / {String}: specify items by ClassName. Concats with itemTag, if set
+        itemTag: "img", // false / {String}: specify items by TagName. Concats with itemClass, if set
+        defaultClasses: { // default Gridddr classes; you can restyle it via css or rename classes to avoid conflicts
+          container: ".gridddr-container",
+          item: ".gridddr-item",
+          overlay: ".gridddr-overlay",
+          nowrap: ".gridddr-nowrap-container",
+          invisible: ".gridddr-invisible",
+          separator: ".gridddr-separator",
+          fitImage: ".fit-image",
+          scrollable: ".gridddr-non-scrollable",
+          imgPlaceholder: ".loaded-image",
+          slideUp: ".gridddr-slideup",
+          flipper: {
+            flipFront: ".gridddr-flipper-front",
+            flipBack: ".gridddr-flipper-back",
+            flipWrapper: ".gridddr-flipper",
+            flipContainer: ".gridddr-flip-container",
+            opened: "opened"
+          },
         },
+        scrollableContainer: false, // {Boolean}: true — show scrolls, false — hide
+        fitContainer: false, // {Boolean}: fit items into Gridddr container
+        fitImage: false, // {Boolean}: fit image into item container
+        saveNode: false, // {Boolean}: true — won't modify original node, false — will wrap into Gridddr container
+        itemWidth: 150, // false / {Integer}: false will be used as auto
+        itemHeight: 150, // false / {Integer}: false will be used as auto
+        preloading: true, // {Boolean}: enable preloading, if itemTag == img
+        useQueue: true, // {Boolean}: use Queue to show images after preloading?
+        shuffleQueue: true, // {Boolean}: randmozie Queue
+        queueDelay: 50, // {Number}: delay between queue appearance
+        overlay: true, // {Boolean} / {String}: true/false — enable/disable, {String} — hex, rgb, color
+        overlayOpacity: 0.6, // {Boolean} / {Float}: true — default, false — invisible, {Float} — your option
+        gridX: false, // {Boolean} / {Integer}: items in row; {Boolean} will be used as auto
+        gridY: false, // {Boolean} / {Integer}: number of rows; {Boolean} will be used as auto
+        repeat: true, // {Boolean}: randomly repeat items to fit in window
+        useGPU: true, // {Boolean}: use GPU accleration for CSS?
+        animations: true, // {Boolean}: use animation?
+        animationType: "fade", // {String}: [flip, fade, slide], if animations enabled
+        animationsSpeed: 1000, // {Boolean}: speed of animations, if settings.animations is enabled
+        events: {},
       },
-      fitContainer: false, // {Boolean}: fit items into Gridddr container
-      fitImage: false, // {Boolean}: fit image into item container
-      saveNode: false, // {Boolean}: true — won't modify original node, false — will wrap into Gridddr container
-      itemWidth: 150, // false / {Integer}: false will be used as auto
-      itemHeight: 150, // false / {Integer}: false will be used as auto
-      preloading: true, // {Boolean}: enable preloading, if itemTag == img
-      useQueue: true, // {Boolean}: use Queue to show images after preloading?
-      shuffleQueue: true, // {Boolean}: randmozie Queue
-      queueDelay: 50, // {Number}: delay between queue appearance
-      overlay: true, // {Boolean} / {String}: true/false — enable/disable, {String} — hex, rgb, color
-      overlayOpacity: 0.6, // {Boolean} / {Float}: true — default, false — invisible, {Float} — your option
-      gridX: false, // {Boolean} / {Integer}: items in row; {Boolean} will be used as auto
-      gridY: false, // {Boolean} / {Integer}: number of rows; {Boolean} will be used as auto
-      repeat: true, // {Boolean}: randomly repeat items to fit in window
-      useGPU: true, // {Boolean}: use GPU accleration for CSS?
-      animations: true, // {Boolean}: use animation?
-      animationType: "fade", // {String}: [flip, fade, slide], if animations enabled
-      animationsSpeed: 1000 // {Boolean}: speed of animations, if settings.animations is enabled
-    };
+      events = {
+        window: {
+          onResize: function() {
+            $(settings.defaultClasses.container).each(function(i, el) {
+              private.updateGrid($(el), $(el).find(settings.defaultClasses.item));
+            });
+          },
+        },
+        "container": {
+          beforeInit: function() {},
+          onInit: function() {
+            alert();
+          },
+        }
+      };
 
     var settings = $.extend(defaultSettings, options), // Merging default settings with user settings (if defined)
       auto = auto || false, // Use auto node creation?
@@ -183,6 +201,22 @@
          **/
         createGrid: function($container, $items) {
           $container.addClass(settings.defaultClasses.nowrap.slice(1));
+          if (!settings.scrollableContainer) {
+            $container.addClass(settings.defaultClasses.scrollable.slice(1));
+          };
+          $container.each(function() {
+            private.updateGrid($(this), $items);
+          });
+          return true;
+        },
+
+        /**
+         *  Redraws grid (on bindings)
+         *  @param {Object} $container
+         *  @param {Object} $items
+         *  @return {Boolean}
+         **/
+        updateGrid: function($container, $items) {
           if (!!settings.gridX && typeof settings.gridX === "number" && Number(settings.gridX) > 0) {
             var $items = private.grepItemsByEq($items, settings.gridX);
             $.each($items, private.insertSeparator);
@@ -195,7 +229,6 @@
 
             };
           };
-
           return true;
         },
 
@@ -456,6 +489,34 @@
         },
 
         /**
+         *  Binds events defined in events (default) and settings.events (user)
+         *  @param {Object} $container
+         *  @return {Object}
+         **/
+        bindEvents: function($container) {
+          var $this;
+
+          if (!!settings.events && typeof settings.events === "object") {
+            events = $.extend((!!settings.events.window || !!settings.events.container ? events.container : events), settings.events);
+          };
+
+          return $.each(events, function(selector, scope) {
+            switch (selector.toString()) {
+              case "window":
+                $this = $(window);
+                break;
+              default:
+                $this = $container;
+            };
+
+            $.each(scope, function(event, callback) {
+              private.debug("Binding", event, "to", $this);
+              $this.bind(event, callback);
+            });
+          });
+        },
+
+        /**
          *  Initialize Gridddr
          *  @param {Integer} index
          *  @param {Object} el
@@ -463,6 +524,8 @@
          **/
         inititalize: function(index, el) {
           var $this = $(el);
+          private.bindEvents($this);
+          $this.trigger('onInit');
           $this.css('opacity', 0);
 
           if (!$this.hasClass(settings.defaultClasses.container.slice(1))) {
@@ -509,6 +572,26 @@
           settings.overlayOpacity = Number(opacity);
           private.overlay($(settings.defaultClasses.container));
           return this;
+        },
+
+        /**
+         *  Returns all events binded to Gridddr
+         *  @param {Object} el
+         *  @return {Object}
+         **/
+        getBindedEvents: function(el) {
+          var $el = el || $(this),
+            result = $.map($._data($el.get(0), "events"), function(name, body) {
+              var event = {
+                name: name,
+                body: body
+              };
+              return event;
+            });
+
+          private.debug("There are", (result ? result.length : 0), "events binded to", $el.get(0).tagName + ($el.attr('id') ? "#" +
+            $el.attr('id') : "") + ($el.attr('class') ? "." + $el.attr('class').replace(/\s+/g, ".") : ""), ":\n", result);
+          return result;
         }
       };
 
