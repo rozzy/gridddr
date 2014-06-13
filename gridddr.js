@@ -21,7 +21,6 @@
     var defaultSettings = {
         debug: false, // {Boolean}: true — enable console debug messages, false — disable
         relative: false, // {Boolean}: true — Gridddr will be applied for inline object, false — fit window
-        container: null, // false / {String}: specify main Gridddr container selector
         itemClass: false, // false / {String}: specify items by ClassName. Concats with itemTag, if set
         itemTag: "img", // false / {String}: specify items by TagName. Concats with itemClass, if set
         defaultClasses: { // default Gridddr classes; you can restyle it via css or rename classes to avoid conflicts
@@ -293,7 +292,7 @@
             })).find(settings.defaultClasses.overlay).get(0));
 
             if (settings.overlay.toString() != "true") {
-              private.css($el, 'background-color', settings.overlay.toString());
+              $el.css('background', settings.overlay.toString());
             };
 
             if (typeof settings.overlayOpacity === "number") {
