@@ -32,6 +32,7 @@
           invisible: ".gridddr-invisible",
           separator: ".gridddr-separator",
           fitImage: ".fit-image",
+          gpu: ".gridddr-gpu-acceleration",
           scrollable: ".gridddr-non-scrollable",
           imgPlaceholder: ".loaded-image",
           slideUp: ".gridddr-slideup",
@@ -57,7 +58,8 @@
         overlayOpacity: 0.6, // {Boolean} / {Float}: true — default, false — invisible, {Float} — your option
         gridX: false, // {Boolean} / {Integer}: items in row; {Boolean} will be used as auto
         gridY: false, // {Boolean} / {Integer}: number of rows; {Boolean} will be used as auto
-        repeat: true, // {Boolean}: randomly repeat items to fit in window
+        repeat: true, // {Boolean}: repeat items to fit in window
+        shuffleRepeat: true, // {Boolean}: randomly repeat items
         useGPU: true, // {Boolean}: use GPU accleration for CSS?
         animations: true, // {Boolean}: use animation?
         animationType: "fade", // {String}: [flip, fade, slide], if animations enabled
@@ -82,7 +84,8 @@
         },
         "item": {
           mouseover: function(e) {},
-          mouseout: function(e) {}
+          mouseout: function(e) {},
+          click: function(e) {}
         }
       };
 
@@ -155,6 +158,10 @@
 
               if (!!settings.defaultClasses.item && !$item.hasClass(settings.defaultClasses.item.slice(1))) {
                 $item.addClass(settings.defaultClasses.item.slice(1));
+              };
+
+              if (!!settings.useGPU) {
+                $item.addClass(settings.defaultClasses.gpu.slice(1));
               };
 
               if (!!settings.itemWidth) {
