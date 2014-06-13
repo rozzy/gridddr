@@ -73,7 +73,10 @@
           },
         },
         "container": {
-          onInit: function() {},
+          inititalized: function() {},
+          finished: function() {
+            alert();
+          }
         },
         "item": {
           mouseover: function() {},
@@ -354,7 +357,7 @@
         loadImage: function($image, goal, src, $queue) {
           $image.attr('src', src).removeData('src');
           if (!!settings.preloading) {
-            $image.addClass(settings.defaultClasses.imgPlaceholder.slice(1))
+            $image.addClass(settings.defaultClasses.imgPlaceholder.slice(1));
           };
           if (!!settings.useQueue) {
             $queue.push($image);
@@ -480,8 +483,28 @@
             var $this = $(this);
             setTimeout(function() {
               private.loadedCallback.apply($this);
+              if (i == $queue.length - 1) {
+                private.eventTrigger("finished", "container");
+              };
             }, i * Number(settings.queueDelay));
           });
+        },
+
+        /**
+         *  Triggers event for certain context
+         *  @param {String} event
+         *  @param {String} context
+         *  @return {Boolean}
+         **/
+        eventTrigger: function(event, context) {
+          var event = event.toLowerCase(),
+            context = context.toLowerCase(),
+            $el = private.defineEventContext(context);
+          private.debug("Event triggered: ", event, "in", context, "context.");
+          if (!!events[context][event]) {
+            return $el.trigger.apply($el, [event, Array.prototype.slice.call(arguments, 2)]);
+          };
+          return false;
         },
 
         /**
@@ -498,28 +521,39 @@
         },
 
         /**
+         *  Defines event context
+         *  @param {String} selector
+         *  @param {Object} $container
+         *  @return {Object}
+         **/
+        defineEventContext: function(selector, $container) {
+          var $container = $container || $(settings.defaultClasses.container),
+            $context;
+          switch (selector.toString().toLowerCase()) {
+            case "window":
+              $context = $(window);
+              break;
+            case "item":
+              $context = $container.find(settings.defaultClasses.item);
+              break;
+            default:
+              $context = $container;
+          };
+          return $context;
+        },
+
+        /**
          *  Binds events defined in events (default) and settings.events (user)
          *  @param {Object} $container
          *  @return {Object}
          **/
         bindEvents: function($container) {
           var $this;
-
           if (!!settings.events && typeof settings.events === "object") {
-            events = $.extend((!!settings.events.window || !!settings.events.container ? events.container : events), settings.events);
+            events = $.extend(events, settings.events);
           };
-
           return $.each(events, function(selector, scope) {
-            switch (selector.toString()) {
-              case "window":
-                $this = $(window);
-                break;
-              case "item":
-                $this = $container.find(settings.defaultClasses.item);
-                break;
-              default:
-                $this = $container;
-            };
+            $this = private.defineEventContext(selector, $container);
             $.each(scope, function(event, callback) {
               private.debug("Binding", event, "to", {
                 elements: $this
@@ -543,6 +577,7 @@
           if (!!settings.events && !!settings.events.beforeInit && typeof settings.events.beforeInit === "function") {
             settings.events.beforeInit.call();
           };
+
           if (!$this.hasClass(settings.defaultClasses.container.slice(1))) {
             $this.addClass(settings.defaultClasses.container.slice(1));
           };
@@ -560,9 +595,10 @@
             private.preloadContent.apply(private, $this);
 
             $this.data('inititalized', true).css('opacity', 1);
+            private.eventTrigger("inititalized", "container", "lol");
             private.debug(el, "inititalized as Gridddr.");
             return true;
-          }
+          };
 
           private.debug("Something went wrong");
           return false;
@@ -612,12 +648,15 @@
           private.debug("There are", (result ? result.length : 0), "events binded to", $el.get(0).tagName + ($el.attr('id') ? "#" +
             $el.attr('id') : "") + ($el.attr('class') ? "." + $el.attr('class').replace(/\s+/g, ".") : ""), ":\n", result);
           return result;
+        },
+
+        getItems: function() {
+          return $(this).find(settings.defaultClasses.item);
         }
       };
 
     $.extend(this, public); // Merge settings
-    $.each(this, private.inititalize); // Initializing objects
-    return this;
+    return $.each(this, private.inititalize); // Initializing objects
   };
 
 }(jQuery));
