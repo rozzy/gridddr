@@ -31,6 +31,7 @@
           nowrap: ".gridddr-nowrap-container",
           invisible: ".gridddr-invisible",
           separator: ".gridddr-separator",
+          useAnimations: ".gridddr-use-animations",
           fitImage: ".fit-image",
           gpu: ".gridddr-gpu-acceleration",
           scrollable: ".gridddr-non-scrollable",
@@ -543,12 +544,17 @@
         inititalize: function(index, el) {
           var $this = $(el);
           $this.css('opacity', 0);
+
           if (!!settings.events && !!settings.events.beforeInit && typeof settings.events.beforeInit === "function") {
             settings.events.beforeInit.call();
           };
 
           if (!$this.hasClass(settings.defaultClasses.container.slice(1))) {
             $this.addClass(settings.defaultClasses.container.slice(1));
+          };
+
+          if (!!settings.animations) {
+            $this.addClass(settings.defaultClasses.useAnimations.slice(1));
           };
 
           if (!!settings.relative) {

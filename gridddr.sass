@@ -11,6 +11,13 @@
   white-space: normal
   overflow: visible
 
+  &.gridddr-use-animations
+    .gridddr-item,
+      +transition(opacity 2s ease-in-out)
+
+    .gridddr-flipper, .gridddr-item img
+      +transition(all 1s ease-in-out)
+
   &.gridddr-non-scrollable
     overflow: hidden
 
@@ -40,14 +47,12 @@
     overflow: hidden
     display: inline-block
     vertical-align: top
-    +transition(opacity 2s ease-in-out)
 
     &.gridddr-gpu-acceleration
       +translate3d(0,0,0)
 
     img
       display: block
-      +transition(all 1s ease-out)
 
     &.gridddr-invisible
       opacity: 0
@@ -73,7 +78,6 @@
       z-index: 10
 
     .gridddr-flipper
-      +transition(all 1s ease-in-out)
       +transform-style(preserve-3d)
       position: relative
       width: 100%
