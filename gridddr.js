@@ -66,17 +66,18 @@
       },
       events = {
         window: {
-          onResize: function() {
+          resize: function() {
             $(settings.defaultClasses.container).each(function(i, el) {
-              private.updateGrid($(el), $(el).find(settings.defaultClasses.item));
+              private.updateGrid($(el), private.findGridddrItems(!!settings.saveNode ? $(el) : $(el).find(settings.defaultClasses.item)));
             });
           },
         },
         "container": {
-          beforeInit: function() {},
-          onInit: function() {
-            alert();
-          },
+          onInit: function() {},
+        },
+        "item": {
+          mouseover: function() {},
+          mouseout: function() {}
         }
       };
 
@@ -217,6 +218,7 @@
          *  @return {Boolean}
          **/
         updateGrid: function($container, $items) {
+          private.removeSeparators();
           if (!!settings.gridX && typeof settings.gridX === "number" && Number(settings.gridX) > 0) {
             var $items = private.grepItemsByEq($items, settings.gridX);
             $.each($items, private.insertSeparator);
@@ -232,6 +234,13 @@
           return true;
         },
 
+        /**
+         *  Clear container from separators
+         *  @return {Boolean}
+         **/
+        removeSeparators: function() {
+          return $(settings.defaultClasses.separator).remove();
+        },
         /**
          *  Insert separator by settings.gridX
          *  @param {Number} i
@@ -505,13 +514,19 @@
               case "window":
                 $this = $(window);
                 break;
+              case "item":
+                $this = $container.find(settings.defaultClasses.item);
+                break;
               default:
                 $this = $container;
             };
-
             $.each(scope, function(event, callback) {
-              private.debug("Binding", event, "to", $this);
-              $this.bind(event, callback);
+              private.debug("Binding", event, "to", {
+                elements: $this
+              });
+              if (typeof callback === "function" && callback !== null) {
+                $this.bind(event, callback);
+              };
             });
           });
         },
@@ -524,10 +539,10 @@
          **/
         inititalize: function(index, el) {
           var $this = $(el);
-          private.bindEvents($this);
-          $this.trigger('onInit');
           $this.css('opacity', 0);
-
+          if (!!settings.events && !!settings.events.beforeInit && typeof settings.events.beforeInit === "function") {
+            settings.events.beforeInit.call();
+          };
           if (!$this.hasClass(settings.defaultClasses.container.slice(1))) {
             $this.addClass(settings.defaultClasses.container.slice(1));
           };
@@ -537,6 +552,7 @@
           };
 
           if (private.overlay($this) && private.wrapItems($this) && !$this.data('inititalized')) {
+            private.bindEvents($this);
             if (!!settings.useQueue) {
               private.createQueue.apply(private);
             };
@@ -581,13 +597,17 @@
          **/
         getBindedEvents: function(el) {
           var $el = el || $(this),
-            result = $.map($._data($el.get(0), "events"), function(name, body) {
-              var event = {
-                name: name,
-                body: body
-              };
-              return event;
-            });
+            eventsList = $._data($el.get(0), "events");
+          if (!eventsList) {
+            return false;
+          };
+          var result = $.map(eventsList, function(name, body) {
+            var event = {
+              name: name,
+              body: body
+            };
+            return event;
+          });
 
           private.debug("There are", (result ? result.length : 0), "events binded to", $el.get(0).tagName + ($el.attr('id') ? "#" +
             $el.attr('id') : "") + ($el.attr('class') ? "." + $el.attr('class').replace(/\s+/g, ".") : ""), ":\n", result);
