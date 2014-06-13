@@ -73,18 +73,20 @@
           },
         },
         "container": {
-          inititalized: function() {},
-          finished: function() {
-            alert();
+          inititalized: function(e) {
+            startTime = new Date().getTime();
+          },
+          finished: function(e, time) {
+            private.debug("Gridddr finished loading in " + time / 1000);
           }
         },
         "item": {
-          mouseover: function() {},
-          mouseout: function() {}
+          mouseover: function(e) {},
+          mouseout: function(e) {}
         }
       };
 
-    var settings = $.extend(defaultSettings, options), // Merging default settings with user settings (if defined)
+    var settings = $.extend(true, defaultSettings, options), // Merging default settings with user settings (if defined)
       auto = auto || false, // Use auto node creation?
       private = { // Private Gridddr functions
         /**
@@ -244,6 +246,7 @@
         removeSeparators: function() {
           return $(settings.defaultClasses.separator).remove();
         },
+
         /**
          *  Insert separator by settings.gridX
          *  @param {Number} i
@@ -292,35 +295,6 @@
             };
           };
 
-          return true;
-        },
-
-        /**
-         *  Wrapper for $.css and $.animate to communicate with settings.animations
-         *  @param {Object} el
-         *  @param {Mixed} property {String} or {Object}
-         *  @param {Mixed} value {String} or {Object}
-         *  @param {Mixed} callback {Function} or {String} (name of global function; like window["alert"])
-         *  @return {Object}
-         **/
-        css: function(el, property, value, callback) {
-          if (settings.animations) {
-            if (typeof property != "object") {
-              var _property = property;
-              property = {};
-              property[_property] = value;
-              delete _property;
-              delete value;
-            };
-            el.animate(property, (settings.animationsSpeed || 0), (callback || false));
-          } else {
-            el.css(property, value || false);
-            if (typeof callback === "function") {
-              callback.call();
-            } else if (typeof window[callback] === "function") {
-              window[callback]();
-            } else private.debug(callback, "function dows not exist.");
-          };
           return true;
         },
 
@@ -484,7 +458,7 @@
             setTimeout(function() {
               private.loadedCallback.apply($this);
               if (i == $queue.length - 1) {
-                private.eventTrigger("finished", "container");
+                private.eventTrigger("finished", "container", (new Date().getTime() - startTime));
               };
             }, i * Number(settings.queueDelay));
           });
@@ -503,19 +477,6 @@
           private.debug("Event triggered: ", event, "in", context, "context.");
           if (!!events[context][event]) {
             return $el.trigger.apply($el, [event, Array.prototype.slice.call(arguments, 2)]);
-          };
-          return false;
-        },
-
-        /**
-         *  Wrapper over console.log to communicate with debug mode (settings.debug)
-         *  @multiple {Mixed} params
-         *  @return {Boolean}
-         **/
-        debug: function() {
-          if (settings.debug && console) {
-            console.log.apply(console, arguments);
-            return true;
           };
           return false;
         },
@@ -550,12 +511,13 @@
         bindEvents: function($container) {
           var $this;
           if (!!settings.events && typeof settings.events === "object") {
-            events = $.extend(events, settings.events);
+            events = $.extend(true, events, settings.events);
           };
           return $.each(events, function(selector, scope) {
             $this = private.defineEventContext(selector, $container);
             $.each(scope, function(event, callback) {
-              private.debug("Binding", event, "to", {
+              var eventOn = callback.toString().match(/\{([\s\S]*)\}/m)[1].replace(/^\s*\/\/.*$/mg, '').trim() === "" ? "empty function on " + event : "on " + event;
+              private.debug("Binding", eventOn, "to", {
                 elements: $this
               });
               if (typeof callback === "function" && callback !== null) {
@@ -595,12 +557,54 @@
             private.preloadContent.apply(private, $this);
 
             $this.data('inititalized', true).css('opacity', 1);
-            private.eventTrigger("inititalized", "container", "lol");
+            private.eventTrigger("inititalized", "container");
             private.debug(el, "inititalized as Gridddr.");
             return true;
           };
 
           private.debug("Something went wrong");
+          return false;
+        },
+
+        /**
+         *  Wrapper for $.css and $.animate to communicate with settings.animations
+         *  @param {Object} el
+         *  @param {Mixed} property {String} or {Object}
+         *  @param {Mixed} value {String} or {Object}
+         *  @param {Mixed} callback {Function} or {String} (name of global function; like window["alert"])
+         *  @return {Object}
+         **/
+        css: function(el, property, value, callback) {
+          if (settings.animations) {
+            if (typeof property != "object") {
+              var _property = property;
+              property = {};
+              property[_property] = value;
+              delete _property;
+              delete value;
+            };
+            el.animate(property, (settings.animationsSpeed || 0), (callback || false));
+          } else {
+            el.css(property, value || false);
+            if (typeof callback === "function") {
+              callback.call();
+            } else if (typeof window[callback] === "function") {
+              window[callback]();
+            } else private.debug(callback, "function dows not exist.");
+          };
+          return true;
+        },
+
+        /**
+         *  Wrapper over console.log to communicate with debug mode (settings.debug)
+         *  @multiple {Mixed} params
+         *  @return {Boolean}
+         **/
+        debug: function() {
+          if (settings.debug && console) {
+            console.log.apply(console, arguments);
+            return true;
+          };
           return false;
         }
       },
@@ -615,15 +619,19 @@
         },
 
         /**
-         *  Changes overlay opacity
-         *  @param {Number} opacity
+         *  Updates settings for Gridddr
+         *  @param {Object} settings
          *  @return {Object}
          **/
-        setOverlayOpacity: function(opacity) {
-          var opacity = opacity || !!opacity;
-          settings.overlayOpacity = Number(opacity);
-          private.overlay($(settings.defaultClasses.container));
-          return this;
+        updateSettings: function(newSettings) {
+          settings = newSettings;
+          public.refresh();
+        },
+
+
+        refresh: function(full) {
+          var full = !!full;
+
         },
 
         /**
@@ -632,30 +640,39 @@
          *  @return {Object}
          **/
         getBindedEvents: function(el) {
-          var $el = el || $(this),
-            eventsList = $._data($el.get(0), "events");
-          if (!eventsList) {
-            return false;
-          };
-          var result = $.map(eventsList, function(name, body) {
-            var event = {
-              name: name,
-              body: body
+          var result = {};
+          $.each(events, function(scope, el) {
+            var $this = $(private.defineEventContext(scope, false)),
+              eventsList = $._data($this.get(0), "events");
+
+            if (!eventsList) {
+              private.debug("There are no events or they are not loaded yet.");
+              result = false;
+              return false;
             };
-            return event;
+
+            result[scope] = $.map(eventsList, function(name, body) {
+              var event = {
+                name: name,
+                body: body
+              };
+              return event;
+            });
           });
 
-          private.debug("There are", (result ? result.length : 0), "events binded to", $el.get(0).tagName + ($el.attr('id') ? "#" +
-            $el.attr('id') : "") + ($el.attr('class') ? "." + $el.attr('class').replace(/\s+/g, ".") : ""), ":\n", result);
           return result;
         },
 
+        /**
+         *  Gets all Gridddr items
+         *  @return {Object}
+         **/
         getItems: function() {
           return $(this).find(settings.defaultClasses.item);
         }
       };
 
-    $.extend(this, public); // Merge settings
+    $.extend(true, this, public); // Merge settings
     return $.each(this, private.inititalize); // Initializing objects
   };
 
