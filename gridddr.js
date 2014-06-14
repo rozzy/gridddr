@@ -139,7 +139,7 @@
         /**
          *  Convert children objects into Gridddr items
          *  @param {Object} $this
-         *  @return {Object}
+         *  @return {Boolean}
          **/
         wrapItems: function($this) {
           var $items = private.findGridddrItems($this);
@@ -165,6 +165,9 @@
               };
 
               if (!!settings.itemWidth) {
+                if (typeof settings.itemWidth === "boolean" && Number(settings.itemWidth) === 1) {
+                  settings.itemWidth = 150;
+                };
                 $item.width(Number(settings.itemWidth));
               };
 
@@ -173,7 +176,11 @@
               };
             });
           };
-          return private.createGrid($this, $items);
+          if (typeof settings.itemWidth !== "boolean" && Number(settings.itemWidth) !== 1) {
+            return private.createGrid($this, $items);
+          } else {
+            return true;
+          };
         },
 
         /**
@@ -240,7 +247,20 @@
               itemsInRow = !!settings.fitContainer ? Math.floor(itemsInRow) : Math.ceil(itemsInRow);
               $.each(private.grepItemsByEq($items, itemsInRow), private.insertSeparator);
             } else {
-
+              var currentRowWidth = 0,
+                widthAfterSum = 0,
+                currentItemWidth = 0;
+              $items.each(function() {
+                currentItemWidth = $(this).width();
+                widthAfterSum = currentRowWidth + currentItemWidth;
+                if ((!!settings.fitContainer && widthAfterSum <= currentRowWidth) || (!settings.fitContainer && widthAfterSum <= currentRowWidth)) {
+                  console.log("im here", currentRowWidth, currentItemWidth, widthAfterSum)
+                  currentRowWidth = widthAfterSum;
+                } else {
+                  currentRowWidth = 0;
+                  private.insertSeparator();
+                };
+              });
             };
           };
           return true;
